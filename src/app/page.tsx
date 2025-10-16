@@ -13,6 +13,8 @@ export default function Home() {
       response.json().then((jsonResponse: ApiResponse<Advocate[]>) => {
         setAdvocates(jsonResponse.data);
         setFilteredAdvocates(jsonResponse.data);
+      }).catch((error: Error) => {
+        console.error("Error fetching advocates:", error);
       });
     });
   }, []);
