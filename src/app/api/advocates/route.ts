@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let data = advocateData.slice(offset, offset + limit);
+    let data = advocateData;
 
     if (searchTerm && searchTerm.trim()) {
       const lowerSearchTerm = searchTerm.toLowerCase().trim();
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json(
       {
-        data,
+        data: data.slice(offset, offset + limit),
         meta: {
           total: data.length,
           limit,
