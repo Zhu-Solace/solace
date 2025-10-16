@@ -12,3 +12,5 @@ export interface Advocate {
     yearsOfExperience: number;
     phoneNumber: number;
 }
+
+export type LoadingState = "idle" | "loading" | "error" | "success";

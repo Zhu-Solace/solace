@@ -1,93 +1,161 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Advocate, ApiResponse } from "./types";
+import { useEffect, useState, useMemo } from "react";
+import { Advocate, ApiResponse, LoadingState } from "./types";
+import Loader from "./components/Loader";
+import Pill from "./components/Pill";
+import { formatPhoneNumber } from "./utils";
+import Specialties from "./components/Specialties";
 
 export default function Home() {
   const [advocates, setAdvocates] = useState<Advocate[]>([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState<Advocate[]>([]);
+  const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/advocates").then((response: Response) => {
-      response.json().then((jsonResponse: ApiResponse<Advocate[]>) => {
+    const fetchAdvocates = async () => {
+      try {
+        setLoadingState("loading");
+
+        const response = await fetch("/api/advocates");
+        if (!response.ok) {
+          throw new Error("Failed to fetch advocates");
+        }
+
+        const jsonResponse = await response.json();
+        if (!jsonResponse.data) {
+          throw new Error("No data returned from API");
+        }
+
         setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-      }).catch((error: Error) => {
+        setLoadingState("success");
+      } catch (error) {
         console.error("Error fetching advocates:", error);
-      });
-    });
+        setLoadingState("error");
+      }
+    };
+
+    fetchAdvocates();
   }, []);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const searchTerm = e.target.value;
-    setSearchTerm(searchTerm);
+  const filteredAdvocates = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return advocates;
+    }
 
-    const filteredAdvocates = advocates.filter((advocate) => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return advocates.filter((advocate) => {
       return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.toString().includes(searchTerm)
+        advocate.firstName.toLowerCase().includes(lowerSearchTerm) ||
+        advocate.lastName.toLowerCase().includes(lowerSearchTerm) ||
+        advocate.city.toLowerCase().includes(lowerSearchTerm) ||
+        advocate.degree.toLowerCase().includes(lowerSearchTerm) ||
+        advocate.specialties.join(" ").toLowerCase().includes(lowerSearchTerm) ||
+        advocate.yearsOfExperience.toString().includes(lowerSearchTerm)
       );
     });
+  }, [advocates, searchTerm]);
 
-    setFilteredAdvocates(filteredAdvocates);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   const onClick = () => {
-    setFilteredAdvocates(advocates);
+    setSearchTerm("");
   };
 
   return (
-    <main style={{ margin: "24px" }}>
-      <h1>Solace Advocates</h1>
-      <br />
-      <br />
-      <div>
-        <p>Search</p>
-        <p>
-          Searching for: <span>{searchTerm}</span>
-        </p>
-        <input style={{ border: "1px solid black" }} onChange={onChange} />
-        <button onClick={onClick}>Reset Search</button>
+    <div className="container mx-auto p-4">
+      <h1 className="text-4xl font-bold mb-4">Solace Advocates</h1>
+      <div className="mb-4 flex">
+        <input
+          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={onChange}
+          placeholder="Search for an advocate"
+          disabled={loadingState !== "success"}
+          value={searchTerm}
+        />
+        <button disabled={loadingState !== "success"} className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600" onClick={onClick}>Reset Search</button>
       </div>
-      <br />
-      <br />
-      <table>
-        <thead>
-          <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>City</th>
-            <th>Degree</th>
-            <th>Specialties</th>
-            <th>Years of Experience</th>
-            <th>Phone Number</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAdvocates.map((advocate: Advocate, index: number) => {
-            return (
-              <tr key={`${index}-advocate`}>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
-                <td>
-                  {advocate.specialties.map((s: string, specialtyIndex: number) => (
-                    <div key={`${index}-${specialtyIndex}-specialty`}>{s}</div>
+      {loadingState === "loading" && <Loader />}
+      {loadingState === "success" && (
+        <>
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Showing {filteredAdvocates.length} of {advocates.length} advocates
+            </p>
+          </div>
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Location
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Credentials
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Specialties
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Experience
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Contact
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredAdvocates.map((advocate: Advocate, index: number) => (
+                    <tr
+                      key={`${index}-advocate`}
+                      className="hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm font-medium text-gray-900">
+                            {advocate.firstName} {advocate.lastName}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">{advocate.city}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Pill>{advocate.degree}</Pill>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1 max-w-xs">
+                          <Specialties specialties={advocate.specialties} uniqueKey={`${index}-advocate`} />
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {advocate.yearsOfExperience} {advocate.yearsOfExperience === 1 ? 'year' : 'years'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <a
+                          href={`tel:${advocate.phoneNumber}`}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
+                        >
+                          {formatPhoneNumber(advocate.phoneNumber)}
+                        </a>
+                      </td>
+                    </tr>
                   ))}
-                </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </main>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+      {loadingState === "error" && <div>Error loading advocates</div>}
+    </div>
   );
 }
