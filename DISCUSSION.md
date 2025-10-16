@@ -14,3 +14,7 @@ I would have liked to fully implement the PostgreSQL database integration instea
 
 - Implement caching strategies like redis or cache-control
 - Database performance, add indexes where it makes sense, use limit/offset instead of slicing the data, get rid of the .includes 
+
+### 3. Seed data
+
+Not that this is important as this is seed data and I imagine real data wouldn't be randomized like this... but the random function kind of irks me. The array should get shuffled as well, otherwise the range of the slice will always return the same consecutive values so it isn't super random. 
