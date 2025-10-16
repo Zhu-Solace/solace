@@ -39,10 +39,7 @@ export async function GET(request: NextRequest) {
           advocate.lastName?.toLowerCase().includes(lowerSearchTerm) ||
           advocate.city?.toLowerCase().includes(lowerSearchTerm) ||
           advocate.degree?.toLowerCase().includes(lowerSearchTerm) ||
-          (Array.isArray(advocate.specialties) &&
-            advocate.specialties.some((specialty: string) =>
-              specialty.toLowerCase().includes(lowerSearchTerm)
-            )) ||
+          advocate.specialties?.join(" ").toLowerCase().includes(lowerSearchTerm) ||
           advocate.yearsOfExperience?.toString().includes(lowerSearchTerm)
         );
       });
