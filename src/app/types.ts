@@ -1,6 +1,13 @@
 export interface ApiResponse<T> {
     data: T;
+    meta?: {
+        total: number;
+        limit: number;
+        offset: number;
+        searchTerm: string | null;
+    };
     error?: string;
+    code?: string;
 }
 
 export interface Advocate {
