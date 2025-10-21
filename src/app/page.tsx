@@ -22,7 +22,13 @@ export default function Home() {
           throw new Error("Failed to fetch advocates");
         }
 
-        const jsonResponse = await response.json();
+        const jsonResponse: ApiResponse<Advocate[]> = await response.json();
+
+        // Handle API error responses
+        if (jsonResponse.error) {
+          throw new Error(jsonResponse.error);
+        }
+
         if (!jsonResponse.data) {
           throw new Error("No data returned from API");
         }
@@ -30,7 +36,6 @@ export default function Home() {
         setAdvocates(jsonResponse.data);
         setLoadingState("success");
       } catch (error) {
-        console.error("Error fetching advocates:", error);
         setLoadingState("error");
       }
     };
